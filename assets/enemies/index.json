@@ -1,0 +1,89 @@
+{
+	"enemies": {
+		"originium_slug": {
+			"name": "Originium Slug",
+			"color": "#ffff08",
+			"description": "An infected wild creature. Due to their low intelligence, they are easily controlled by enemy casters for use as cannon fodder during invasions.",
+			"type": "normal",
+			"weight": 0,
+			"levels": 2,
+			"behavior": "enemy_standard",
+			"data": [
+				{
+					"health": 550,
+					"on_ground": true,
+					"taunt": 1,
+					"attack": 130,
+					"defence": 0,
+					"magic_resistance": 0,
+					"attack_prepare": 0.1,
+					"attack_period": [1.7],
+					"speed": 1,
+					"invasion": 1,
+					"is_stun_possible": true,
+					"is_silence_possible": true,
+					"is_sleep_possible": true
+				},
+				{
+					"health": 2050,
+					"on_ground": true,
+					"taunt": 1,
+					"attack": 300,
+					"defence": 0,
+					"magic_resistance": 0,
+					"attack_prepare": 0.1,
+					"attack_period": [1.7],
+					"speed": 1,
+					"invasion": 1,
+					"is_stun_possible": true,
+					"is_silence_possible": true,
+					"is_sleep_possible": true
+				}
+				
+			]
+		},
+		"originium_slug_alpha": {
+			"name": "Originium Slug Alpha",
+			"color": "#fe8734",
+			"description": "An infected wild creature that is more dangerous than a normal Originium Slug. Due to their low intelligence, they are easily controlled by enemy casters for use as cannon fodder during invasions.",
+			"type": "normal",
+			"weight": 0,
+			"levels": 2,
+			"behavior": "enemy_standard",
+			"data": [
+				{
+					"health": 1050,
+					"attack": 185,
+					"defence": 0,
+					"on_ground": true,
+					"taunt": 1,
+					"magic_resistance": 0,
+					"attack_prepare": 0.1,
+					"attack_period": [1.7],
+					"speed": 1,
+					"invasion": 1,
+					"is_stun_possible": true,
+					"is_silence_possible": true,
+					"is_sleep_possible": true
+				},
+				{
+					"health": 2850,
+					"attack": 400,
+					"defence": 0,
+					"on_ground": true,
+					"taunt": 1,
+					"magic_resistance": 0,
+					"attack_prepare": 0.1,
+					"attack_period": [1.7],
+					"speed": 1,
+					"invasion": 1,
+					"is_stun_possible": true,
+					"is_silence_possible": true,
+					"is_sleep_possible": true
+				}
+				
+			]
+		}
+	
+	}
+}

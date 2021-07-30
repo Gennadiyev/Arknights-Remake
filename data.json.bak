@@ -1,0 +1,18 @@
+{
+	"name": "Kunologist",
+	"level": 1,
+	"cash": 1942028,
+	"kanban": {
+		"name": "Melantha",
+		"skin": "Letters from Wesex",
+		"offset_x": 0,
+		"offset_y": 30
+	},
+	"characters": [
+		{
+			"name": "melantha",
+			"affinity": 0,
+			"unlocked_modifiers": ["gift", "token_1"]
+		}
+	]
+}

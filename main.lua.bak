@@ -1,0 +1,279 @@
+local colors = require("libs.colors")
+local json = require("libs.json")
+local md5 = require("libs.md5")
+local easing = require("libs.easing")
+local lg = require("love.graphics")
+local lf = require("love.filesystem")
+local lw = require("love.window")
+local floor = math.floor
+local min = math.min
+local max = math.max
+local pi = math.pi
+local random = math.random
+
+PATH_PREFIX_CHARACTERS = "assets/characters/"
+PATH_PREFIX_ENEMIES = "assets/enemies/"
+PATH_PREFIX_LEVELS = "levels/"
+
+local doctor = json.decode(lf.read("data.json"))
+-- Load all character info
+local characters = json.decode(lf.read(PATH_PREFIX_CHARACTERS.."index.json")).characters
+local loaded_characters = {}
+for i = 1, #characters do
+	loaded_characters[characters[i]['name']] = json.decode(lf.read(PATH_PREFIX_CHARACTERS..characters[i]['folder'].."/main.json"))
+	loaded_characters[characters[i]['name']]['folder'] = PATH_PREFIX_CHARACTERS..characters[i]['folder']..'/'
+end
+-- Load kanban
+local skins = loaded_characters[doctor['kanban']['name']]['skins']
+local kanban
+for i = 1, #skins do
+	if skins[i]['name'] == doctor['kanban']['skin'] then
+		kanban = lg.newImage(loaded_characters[doctor['kanban']['name']]['folder']..skins[i]['file'])
+	end
+end
+if not(kanban) then
+	kanban = lg.newImage(loaded_characters[doctor['kanban']['name']]['folder']..skins[1]['file'])
+end
+local kanbanMessage = loaded_characters[doctor['kanban']['name']]['messages']['greeting']
+
+local enemies = json.decode(lf.read(PATH_PREFIX_ENEMIES.."index.json")).enemies
+
+local w, h = lg.getWidth(), lg.getHeight()
+local fontTitle = lg.newFont("sf-pro-display-bold.ttf", h * 0.050)
+local fontMain = lg.newFont("sf-pro-display.ttf", h * 0.027)
+local fontBold = lg.newFont("novecento-wide-bold.ttf", h * 0.060)
+local fontMini = lg.newFont("sf-pro-display.ttf", h * 0.020)
+local levels = {}
+local loadingString = "Loading."
+local levelLoaderChannel = love.thread.newChannel('level_loader')
+local levelLoaderThread = love.thread.newThread('level_loader.lua')
+levelLoaderThread:start(PATH_PREFIX_LEVELS, levelLoaderChannel)
+local levelSelectTime = -1
+local levelSelected = -1
+local levelPage = 1
+local moveRegister = {}
+
+lg.setDefaultFilter("nearest", "nearest", 2)
+lg.setBackgroundColor(colors.black)
+
+function lg.gradientrectangle(x, y, w, h, color1, color2, direction, segments, easefunc)
+	if direction == nil then direction = "lr" end
+	if easefunc == nil then easefunc = easing.linear end
+	if segments == nil then segments = 10 end
+	if direction == "lr" then
+		dx = max(1, floor(w / segments))
+		local Mx = 0
+		for mx = 0, w-dx, dx do
+			lg.setColor(
+				easefunc(mx, color1[1], color2[1] - color1[1], w),
+				easefunc(mx, color1[2], color2[2] - color1[2], w),
+				easefunc(mx, color1[3], color2[3] - color1[3], w),
+				easefunc(mx, color1[4], color2[4] - color1[4], w)
+			)
+			lg.rectangle("fill", x+mx, y, dx, h)
+			Mx = mx
+		end
+		Mx = Mx + dx
+		lg.setColor(
+			easefunc(Mx, color1[1], color2[1] - color1[1], w),
+			easefunc(Mx, color1[2], color2[2] - color1[2], w),
+			easefunc(Mx, color1[3], color2[3] - color1[3], w),
+			easefunc(Mx, color1[4], color2[4] - color1[4], w)
+		)
+		lg.rectangle("fill", x+Mx, y, w-Mx, h)
+	elseif direction == "td" then
+		dy = max(1, floor(h / segments))
+		local My = 0
+		for my = 0, h-dy, dy do
+			lg.setColor(
+				easefunc(my, color1[1], color2[1] - color1[1], h),
+				easefunc(my, color1[2], color2[2] - color1[2], h),
+				easefunc(my, color1[3], color2[3] - color1[3], h),
+				easefunc(my, color1[4], color2[4] - color1[4], h)
+			)
+			lg.rectangle("fill", x, y+my, w, dy)
+			My = my
+		end
+		My = My + dy
+		lg.setColor(
+			easefunc(My, color1[1], color2[1] - color1[1], h),
+			easefunc(My, color1[2], color2[2] - color1[2], h),
+			easefunc(My, color1[3], color2[3] - color1[3], h),
+			easefunc(My, color1[4], color2[4] - color1[4], h)
+		)
+		lg.rectangle("fill", x, y+My, w, h-My)
+	end
+end
+
+function lg.drawroundedbutton(text, x, y, w, h, isFilled, faceColor, backColor)
+	local r = h * 0.5
+	if isFilled then
+		if not(faceColor) then faceColor = colors.black end
+		if not(backColor) then backColor = colors.white end
+		lg.setColor(backColor)
+		lg.arc("fill", "open", x+r, y+r, r, 0.5 * pi, 1.5 * pi, 30)
+		lg.rectangle("fill", x+r, y, w-2*r, h)
+		lg.arc("fill", "open", x+w-r, y+r, r, 1.5 * pi, 2.5 * pi, 30)
+		lg.setColor(faceColor)
+		lg.printf(text, x, y+r-lg.getFont():getHeight() * 0.5, w, "center")
+	else
+		if not(faceColor) then faceColor = colors.white end
+		lg.setColor(faceColor)
+		lg.arc("line", "open", x+r, y+r, r, 0.5 * pi, 1.5 * pi, 30)
+		lg.line(x+r+1, y, x+w-r-1, y)
+		lg.line(x+r+1, y+r*2, x+w-r-1, y+r*2)
+		lg.arc("line", "open", x+w-r, y+r, r, 1.5 * pi, 2.5 * pi, 30)
+		lg.printf(text, x, y+r-lg.getFont():getHeight() * 0.5, w, "center")
+	end
+end
+
+local function levelSelect(id)
+	id = floor(id + 0.5)
+	if id > 0 and id <= #levels then
+		levelSelected = id
+		levelSelectTime = T
+		return id, T
+	else
+		levelSelected = 0
+		levelSelectTime = T
+	end
+end
+
+function love.load()
+	T = 0
+	lw.setFullscreen(true)
+end
+
+local function cashTostring(cash)
+	local cashStr = tostring(floor(cash + 0.5))
+	for i = #cashStr - 3, 1, -3 do
+		cashStr = cashStr:sub(1, i)..","..cashStr:sub(i+1,-1)
+	end
+	return cashStr
+end
+
+function love.draw()
+	lg.setFont(fontTitle)
+	lg.setColor(1, 1, 1, 1)
+	lg.printf({colors.white, "Welcome, ", colors.accent, "Dr. ", doctor.name}, w * 0.09, h * 0.19 - fontTitle:getHeight() * 0.5, w * 0.91, "left")
+	lg.setFont(fontMain)
+	lg.drawroundedbutton("Administrator", w * 0.09, h * 0.27 - fontMain:getHeight() * 0.5, w * 0.13, fontMain:getHeight() * 1.8, true, colors.black, colors.accent) 
+	lg.setLineWidth(2)
+	lg.drawroundedbutton("Cash: "..cashTostring(doctor.cash), w * 0.23, h * 0.27 - fontMain:getHeight() * 0.5, w * 0.15, fontMain:getHeight() * 1.8, false, colors.white)
+	if loadingString then
+		lg.printf({colors.white, loadingString}, w * 0.09, h * 0.4 - fontMain:getHeight() * 0.5, w * 0.91, "left")
+	else
+		-- Display Levels
+		local hereX, hereY = w * 0.09, h * 0.4
+		lg.setFont(fontBold)
+		local cardHeight = h * 0.15
+		-- lg.rectangle("line", hereX, hereY, w * 0.46, cardHeight)
+		local levelLoadedDuration = min(0.5, T - levelLoadedTime)
+		for i = 1, #levels do
+			if levelSelected and i == levelSelected then
+				local selectedDuration = T - levelSelectTime
+				selectedDuration = min(0.5, selectedDuration)
+				lg.setColor(colors.accent)
+    			lg.rectangle("fill", hereX, hereY + cardHeight * easing.outQuad(selectedDuration, 0.3, -0.2, 0.5), 3, cardHeight * easing.outQuad(selectedDuration, 0.4, 0.1, 0.5))
+    			lg.gradientrectangle(
+    				hereX + 3,
+    				hereY + cardHeight * easing.outQuad(selectedDuration, 0.3, -0.2, 0.5),
+    				easing.outQuad(selectedDuration, 0, w * 0.3, 0.5),
+    				cardHeight * easing.outQuad(selectedDuration, 0.4, 0.1, 0.5),
+    				{colors.white[1], colors.white[2], colors.white[3], easing.outQuad(selectedDuration, 0.2, 0.4, 0.5)},
+    				{colors.white[1], colors.white[2], colors.white[3], 0}, 'lr', 80
+    			)
+    			lg.setColor(1, 1, 1, 1)
+				lg.printf({colors.dim, levels[i]['code']:sub(1, easing.outQuad(levelLoadedDuration, 1, #levels[i]['code'], 0.5))}, hereX + 21, hereY + cardHeight * easing.outQuad(selectedDuration, 0.5, -0.15, 0.5) - fontBold:getHeight() * 0.5 + 3, w * 0.46, "left")
+				lg.printf({colors.white, levels[i]['code']:sub(1, easing.outQuad(levelLoadedDuration, 1, #levels[i]['code'], 0.5))}, hereX + 18, hereY + cardHeight * easing.outQuad(selectedDuration, 0.5, -0.15, 0.5) - fontBold:getHeight() * 0.5, w * 0.46, "left")
+				lg.setFont(fontMain)
+				lg.printf({colors.white, levels[i]['name']:sub(1, easing.outQuad(selectedDuration, 1, #levels[i]['name'], 0.5)), ' - ', colors.accent, levels[i]['author']:sub(1, easing.outQuad(selectedDuration, 1, #levels[i]['author'], 0.5))}, hereX + 18,  hereY + cardHeight * easing.outQuad(selectedDuration, 0.5, -0.15, 0.5) + fontBold:getHeight() * 0.7, w * 0.46, "left")
+    		else
+    			if random(0, 100) <= 175 * levelLoadedDuration then
+        			lg.setColor(colors.dim)
+        			lg.rectangle("fill", hereX + 3, hereY + cardHeight * 0.3 + 3, 3, cardHeight * 0.4)
+        			lg.setColor(colors.white)
+        			lg.rectangle("fill", hereX, hereY + cardHeight * 0.3, 3, cardHeight * 0.4)
+				end
+				lg.setColor(1, 1, 1, 1)
+				lg.printf({colors.dim, levels[i]['code']:sub(1, easing.outQuad(levelLoadedDuration, 1, #levels[i]['code'], 0.5))}, hereX + 21, hereY + cardHeight * 0.5 - fontBold:getHeight() * 0.5 + 3, w * 0.46, "left")
+				lg.printf({colors.white, levels[i]['code']:sub(1, easing.outQuad(levelLoadedDuration, 1, #levels[i]['code'], 0.5))}, hereX + 18, hereY + cardHeight * 0.5 - fontBold:getHeight() * 0.5, w * 0.46, "left")
+			end
+			hereY = hereY + cardHeight
+		end
+	end
+	lg.setColor(colors.white)
+	lg.circle("fill", w * 1.2, h * 0.5, w * 0.6, 100)
+	lg.setColor(colors.black)
+	lg.circle("fill", w * 1.2, h * 0.5, w * 0.3, 100)
+	lg.setColor(1, 1, 1, 1)
+	lg.draw(kanban, w*0.8 + doctor['kanban']['offset_x'], h*0.5 + doctor['kanban']['offset_y'], 0, min(w*0.3/kanban:getWidth(), h/kanban:getHeight()) * 2, nil, kanban:getWidth() * 0.5, kanban:getHeight() * 0.5)
+	if kanbanMessage then
+		lg.setFont(fontMain)
+		lg.gradientrectangle(w * 0.6, h * 0.7, w * 0.33, h * 0.2, {0, 0, 0, 0.8}, {0, 0, 0, 0.4}, 'lr', 100)
+		lg.setLineWidth(2)
+		lg.setColor(1, 1, 1, 0.4)
+		lg.rectangle("line", w * 0.6, h * 0.7, w * 0.33, h * 0.2)
+		lg.setColor(1, 1, 1, 1)
+		lg.printf({colors.accent, doctor['kanban']['name'], ": ", {1, 1, 1, 1}, kanbanMessage}, w * 0.62, h * 0.72, w * 0.29, "left")
+	end
+	-- lg.setFont(fontBold)
+	-- lg.setColor(colors.dim)
+	-- lg.printf(doctor['kanban']['name'], w, 0, h, "left", pi*0.5)
+end
+
+function love.update(dt)
+	T = T + dt
+	if loadingString and floor(T-dt) ~= floor(T) then
+		loadingString = loadingString .. "."
+		if #loadingString > 10 then
+			loadingString = "Loading."
+		end
+	end
+	local returnedLevels = levelLoaderChannel:peek()
+	if returnedLevels then
+		loadingString = nil
+		levels = returnedLevels
+		levelLoaderChannel:pop()
+		levelLoadedTime = T
+		for i = 1, #levels do
+			levels[i]['cover_love_image'] = lg.newImage(levels[i]['cover'])
+		end
+	end
+end
+
+function love.touchpressed(id, x, y, dx, dy)
+	if x > 0.6 * w then
+		if kanbanMessage then
+			kanbanMessage = nil
+		else
+			local c = loaded_characters[doctor['kanban']['name']]['messages']['interactions']
+			kanbanMessage = c[random(1, #c)]
+		end
+	elseif x > w * 0.09 and y > h * 0.4 then
+		levelSelect(math.ceil((y - h * 0.4) / (h * 0.15)))
+	else
+		levelSelect(0)
+	end
+end
+
+function love.touchmoved(id, x, y, dx, dy)
+	for i = 1, #moveRegister do
+		if id == moveRegister[i]['id'] then
+			moveRegister[i].onMoved(id, x, y, dx, dy)
+		end
+	end
+end
+
+function love.touchreleased(id, x, y, dx, dy)
+	for i = #moveRegister, 1, -1 do
+		if id == moveRegister[i]['id'] then
+			moveRegister[i].onReleased(id, x, y, dx, dy)
+			table.remove(moveRegister, i)
+		end
+	end
+end
+
+function love.threaderror(str, str2)
+	error(str2)
+end

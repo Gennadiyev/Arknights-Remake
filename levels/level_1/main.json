@@ -1,0 +1,34 @@
+{
+	"code": "ALPHA",
+	"name": "Level Test",
+	"cover": "cover.jpg",
+	"author": "Kunologist",
+	"difficulty": "Easy",
+	"description": "Test level description",
+	"level_id": "a8c4eeb934e0d9cf2aabbdf96a2782d3",
+	"dimension": [10, 7],
+	"map": [
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+		[10,1, 1, 1, 2, 2, 1, 1, 1, 11],
+		[0, 0, 2, 1, 2, 2, 1, 2, 2, 0 ],
+		[0, 0, 2, 1, 1, 1, 1, 2, 0, 0 ],
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+	],
+	"enemy_count": 3,
+	"life": 3,
+	"cost_init": 0,
+	"cost_regen": 1,
+	"program": [
+		"wait 1",
+		"hint path 3 1 3 4 5 4 5 7 3 7 3 10",
+		"wait 2",
+		"summon originium_slug 1 from 3 1 to 3 4 to 5 4 to 5 7 to 3 7 to 3 10 invade",
+		"wait clear",
+		"summon originium_slug 1 from 3 1 wait 2 to 3 4 to 5 4 to 5 7 to 3 7 to 3 10 invade",
+		"wait 1",
+		"summon originium_slug 1 from 3 1 wait 2 to 3 4 to 5 4 to 5 7 to 3 7 to 3 10 invade",
+		"wait clear"
+	]
+}

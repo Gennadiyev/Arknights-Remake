@@ -1,0 +1,106 @@
+{
+	"meta": {
+		"type": "caster",
+		"rarity": 3,
+		"name": "Eyjafjalla",
+		"gender": "female"
+	},
+	"color": ["ED746C", "8E8697"],
+	"messages": {
+		"greeting": "Good morning, senpai!",
+		"newcomer": "I'm Eyjafjalla, whose main career before joining Rhodes Island was volcanology. I'm a bit hard of hearing due to oripathy. I hope I won't be much trouble to you, senpai.",
+		"onSelect": [
+			"Senpai?",
+			"Please give your orders, senpai."
+		],
+		"battle_finished_normal": "Is everyone okay? Anything I can do?",
+		"battle_finished_perfect": "Why does there have to be conflict in this world?",
+		"battle_finished_extra": "I'm so glad you're safe, senpai...",
+		"interactions": [
+			"Huh? What? Why do I call you \"senpai\", you mean? Well, you're an expert in disaster studies, so you're my senior, right? Aren't we supposed to call our seniors \"senpai\"?",
+			"What? Say that again? Oh, you're wondering why I'm hard of hearing? Well, it was because I got infected with Oripathy back when I was doing research near a volcano...",
+			"Besides completing the tasks you give me, I have to go to Dr. Kal'tsit regularly for checkups. The doctor said my symptoms are pretty serious...",
+			"I have to work hard to finish the research my parents had started! I want to prove that their work was meaningful and maybe even change the world!",
+			"My parents... they already passed. A pyroclastic flow hit them when they were conducting studies near a volcano... I have to pick up where they left off and complete there thesis, no matter what!",
+			"My playmates? I'm pretty friendly with Mousse and some others, so I'm not lonely at all! If possible, I'd love to start a book club with them too. Can we hold meetings in your office, senpai?",
+			"Dr. Kal'tsit told me... I'm not only losing my hearing but also my vision. Oripathy is really relentless, huh?",
+			"How could I tell you were behind me, you ask? I could feel your warmth, of course! My eyesight and hearing might not be what they used to be, but my other senses are still very sharp. Can't bring me down this easily, you know!"
+		]
+	},
+	"behavior": "caster_default",
+	"basics": {
+		"health": 1743,
+		"attack": 645,
+		"defence": 122,
+		"cost": 21,
+		"magic_resistance": 20,
+		"block": 1,
+		"revive_period": 70,
+		"attack_speed": 100,
+		"attack_prepare": 0.3,
+		"attack_period": [1.6],
+		"is_attack_all_blocked_enemies": false,
+		"is_healable": true,
+		"taunt": 1
+	},
+	"range": [
+		[0, 0],
+		[0, 1],
+		[0, 2],
+		[0, 3],
+		[-1, 0],
+		[-1, 1],
+		[-1, 2],
+		[1, 0],
+		[1, 1],
+		[1, 2]
+	],
+	"skills": [
+		{
+			"name": "Attack Upgrade - Tier I",
+			"cost_regeneration": "auto",
+			"is_manual_trigger": true,
+			"cost": 40,
+			"duration": 20,
+			"effect": [
+				"atk multiply 1.50"
+			]
+		}
+	],
+	"modifiers": {
+		"gift": [
+			"atk multiply 1.14 @class=caster",
+			"sp_init add 7 15"
+		],
+		"affinity": [
+			"atk add 90"
+		],
+		"token_1": [
+			"cost add -1"
+		],
+		"token_2": [
+			"sp_init add 3 4"
+		],
+		"token_3": [
+			"atk add 27"
+		],
+		"token_4": [
+			"cost add -1"
+		],
+		"token_5": [
+			"atk multiply 1.01754385964912280701 @class=caster"
+		]
+	},
+	"skins": [
+		{
+			"name": "Standard",
+			"file": "main.png",
+			"quad": "main_quad.png"
+		},
+		{
+			"name": "Elite",
+			"file": "main_elite.png",
+			"quad": "main_elite_quad.png"
+		}
+	]
+}
