@@ -1,3 +1,5 @@
+**WARNING: THIS PROJECT IS HEAVILY UNDER DEVELOPMENT AND MAY BE DISCONTINUED AT ANY TIME!**
+
 # Arknights Clone Documentation - Designing Levels
 
 This program is a 2D Arknights emulator, in hope for simulating gameplay and creating customized levels, also used as a primary framework for reinforcement learning.
