@@ -1,8 +1,14 @@
 **WARNING: THIS PROJECT IS HEAVILY UNDER DEVELOPMENT AND MAY BE DISCONTINUED AT ANY TIME!**
 
-# Arknights Clone Documentation - Designing Levels
+# Arknights Clone
+
+![](https://github.com/Gennadiyev/Arknights-Remake/workflows/LOVE/badge.svg)
 
 This program is a 2D Arknights emulator, in hope for simulating gameplay and creating customized levels, also used as a primary framework for reinforcement learning.
+
+You need [LOVE2D](https://love2d.org/) to run this project, or you need to wait for a beta release. 
+
+# Arknights Clone Documentation - Designing Levels
 
 Before the visual level editor comes out, levels may only be edited in JSON format.
 
