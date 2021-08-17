@@ -1,8 +1,8 @@
 local colors = require("libs.colors")
 local profiler = require("libs.profiler")
-local fpsGraph = profiler:new('fps', 30, 10, 80, 50)
-local memGraph = profiler:new('mem', 130, 10, 80, 50)
-local dtGraph = profiler:new('custom', 230, 10, 80, 50)
+local fpsGraph = profiler:new('fps', 30, 0, 70, 40)
+local memGraph = profiler:new('mem', 130, 0, 70, 40)
+local dtGraph = profiler:new('custom', 230, 0, 70, 40)
 local json = require("libs.json")
 local md5 = require("libs.md5")
 local easing = require("libs.easing")
@@ -225,7 +225,7 @@ function warn(str)
 	debugMessages[#debugMessages + 1] = {
 		start = T or 0,
 		duration = 2,
-		text = tostring(str),
+		text = str,
 		color = colors.white
 	}
 end
@@ -355,7 +355,6 @@ local function levelPerform(command)
 			warn("Unknown 'from' in 'summon' in command: "..command)
 			return
 		end
-		local osx, osy = sx, sy
 		d.weight = e.weight
 		-- behavior = getBehavior(e.behavior,)
 		local p = {}
@@ -401,7 +400,7 @@ local function levelPerform(command)
 			data = d,
 			blocked = false,
 			program = p,
-			position = {osx, osy},
+			position = {sx, sy},
 			pathLength = pathLength,
 			movedLength = 0
 		}
@@ -426,7 +425,6 @@ local function gameStart(level, team)
 				operatorPerform(team[i], commands[k])
 			end
 		end
-		getBehavior(loaded_characters[team[i]['name']]['behavior'], team[i])
 	end
 	game = {
 		timeScale = 1,
@@ -503,7 +501,7 @@ function love.draw()
 				local e = game.enemies[i]
 				lg.setColor(game.enemies[i]['color'], 1)
 				local dx, dy = mapFromGridCenter(e.position[1], e.position[2])
-				lg.circle("fill", dx, dy, game.param.blockSize * 0.25)
+				lg.circle("fill", dx, dy, game.param.blockSize * 0.5)
 			end
 			for y = 1, #map do
 				for x = 1, #map[1] do
@@ -795,7 +793,7 @@ function love.draw()
 	dtGraph:draw()
 end
 
-warn("Dev Preview")
+warn("Developer Preview")
 
 function love.update(dt)
 	if game then
@@ -942,6 +940,7 @@ function love.touchpressed(id, x, y, dx, dy)
 		local cardWidth = floor(w / 12)
 		local cardHeight = cardWidth / 18 * 35
 		if y > h - cardHeight then
+			warn("GEKKO!")
 			-- Selecting heros
 			local heroSelected = floor(x / cardWidth) + 1
 			if heroSelected <= #game.team then
@@ -1001,17 +1000,9 @@ end
 
 function love.keypressed(key)
 	if game then
-		if key == "escape" then
-			pause()
-		elseif key == "1" then
-			game.timeScale = 1
-		elseif key == "2" then
-			game.timeScale = 2
-		elseif key == "3" then
-			game.timeScale = 4
-		end
+		pause()
 	elseif teamEditing then
-		teamEditing = false
+		teamEditing = false	
 	end
 end
 

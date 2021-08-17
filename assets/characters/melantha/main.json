@@ -22,7 +22,7 @@
 			"Doctor, could you accept this bottle of perfume, please? I brought it from home... This type of perfume can lift spirits. I often sniff at it when I feel down..."
 		]
 	},
-	"behavior": "guard_melee_default",
+	"behavior": "operator_melee_standard",
 	"basics": {
 		"health": 2620,
 		"attack": 673,

@@ -1,0 +1,86 @@
+{
+    "version": "0.0.1",
+    "plugins": [],
+    "grounds": [
+        {
+            "id": 0,
+            "name": "Void",
+            "plugin": "General",
+            "should_display_description": false,
+            "description": "Placeholder block",
+            "operators": "none"
+        },
+        {
+            "id": 1,
+            "name": "Ground",
+            "plugin": "General",
+            "should_display_description": false,
+            "description": "Ground",
+            "operators": "ground"
+        },
+        {
+            "id": 2,
+            "name": "Elevated Platform",
+            "plugin": "General",
+            "should_display_description": false,
+            "description": "Elevated platform",
+            "operators": "elevated"
+        },
+        {
+            "id": 3,
+            "name": "Restricted Ground",
+            "plugin": "General",
+            "should_display_description": false,
+            "description": "Ground where operators cannot be placed",
+            "operators": "none"
+        },
+        {
+            "id": 4,
+            "name": "Restricted Elevated Platform",
+            "plugin": "General",
+            "should_display_description": false,
+            "description": "Elevated platform where operators cannot be placed",
+            "operators": "none"
+        },
+        {
+            "id": 5,
+            "name": "Ground with Grass",
+            "plugin": "General",
+            "should_display_description": true,
+            "description": "Operators placed on grass will not be targeted by most ranged enemies",
+            "operators": "ground"
+        },
+        {
+            "id": 6,
+            "name": "Elevated Platform with Grass",
+            "plugin": "General",
+            "should_display_description": true,
+            "description": "Operators placed on grass will not be targeted by most ranged enemies",
+            "operators": "elevated"
+        },
+        {
+            "id": 7,
+            "name": "Uniform Platform",
+            "plugin": "General",
+            "should_display_description": false,
+            "description": "Both ground and elevated operators can be placed on uniform platforms",
+            "operators": "both"
+        },
+        {
+            "id": 10,
+            "name": "Enemy Base",
+            "plugin": "General",
+            "should_display_description": true,
+            "description": "Enemies come out from here",
+            "operators": "none"
+        },
+        {
+            "id": 11,
+            "name": "Base",
+            "plugin": "General",
+            "should_display_description": true,
+            "description": "Doctor's home",
+            "operators": "none"
+        }
+    ]
+}
