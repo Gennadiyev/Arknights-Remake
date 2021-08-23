@@ -1,6 +1,10 @@
 {
-	"play": "baseline_play_circle_outline_white_48dp.png"
-	
-
-
+	"play":    "baseline_play_circle_outline_white_48dp.png",
+	"back":    "baseline_arrow_back_white_48dp.png",
+	"speed":   "baseline_speed_white_48dp.png",
+	"pause":   "baseline_pause_white_48dp.png",
+	"pausing": "outline_pause_circle_filled_white_48dp.png",
+	"exit":    "outline_logout_white_48dp.png",
+	"cost":    "baseline_toll_white_48dp.png",
+	"coin":    "baseline_monetization_on_white_48dp.png"
 }

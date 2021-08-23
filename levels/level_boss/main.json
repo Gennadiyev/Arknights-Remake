@@ -1,0 +1,28 @@
+{
+	"code": "KUN-EX-1",
+	"name": "Bossfight",
+	"cover": "cover.jpg",
+	"author": "Kunologist",
+	"difficulty": "Hard",
+	"description": "Darkness.\nDarkness will be everywhere.",
+	"level_id": "a8c4eeb934e0d9cf2aabbdf96a2782d4",
+	"dimension": [16, 9],
+	"map": [
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		[10,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,10],
+		[0, 0, 1, 2, 2, 2, 2, 1, 2, 1, 2, 2, 2, 0, 0, 0],
+		[10,1, 1, 1, 2, 2, 1, 1, 1, 1, 2, 2, 0, 0, 0, 0],
+		[0, 0, 2, 1, 0, 0, 1, 2, 1, 0, 0, 0, 0, 0, 0, 0],
+		[0, 0, 2, 1, 1, 1, 1, 2, 1, 0, 0, 0, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 2, 2, 1, 0, 0, 0, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 0, 10,11,0, 0, 0, 0, 0, 0, 0]
+	],
+	"enemy_count": 1,
+	"life": 1,
+	"cost_init": 10,
+	"cost_regen": 2,
+	"program": [
+		"summon originium_slug 2 from 2 1 to 2 16 to 2 9 wait 3 to 2 8 to 4 8 to 4 10 to 2 10 to 2 8 to 4 8 to 4 9 to 9 9 invade"
+	]
+}

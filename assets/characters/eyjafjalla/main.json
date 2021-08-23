@@ -1,6 +1,6 @@
 {
 	"meta": {
-		"type": "caster",
+		"class": "caster",
 		"rarity": 3,
 		"name": "Eyjafjalla",
 		"gender": "female"
@@ -27,7 +27,7 @@
 			"How could I tell you were behind me, you ask? I could feel your warmth, of course! My eyesight and hearing might not be what they used to be, but my other senses are still very sharp. Can't bring me down this easily, you know!"
 		]
 	},
-	"behavior": "caster_default",
+	"behavior": "caster_standard",
 	"basics": {
 		"health": 1743,
 		"attack": 645,
@@ -39,9 +39,8 @@
 		"attack_speed": 100,
 		"attack_prepare": 0.3,
 		"attack_period": [1.6],
-		"is_attack_all_blocked_enemies": false,
-		"is_healable": true,
-		"taunt": 1
+		"taunt": 1,
+		"place": "elevated"
 	},
 	"range": [
 		[0, 0],
@@ -63,7 +62,7 @@
 			"cost": 40,
 			"duration": 20,
 			"effect": [
-				"atk multiply 1.50"
+				"atk multiply 1.50 @duration=20"
 			]
 		}
 	],

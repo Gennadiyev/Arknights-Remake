@@ -2,10 +2,11 @@
 	"enemies": {
 		"originium_slug": {
 			"name": "Originium Slug",
-			"color": "#ffff08",
+			"color": ["#222218", "#ffff08"],
 			"description": "An infected wild creature. Due to their low intelligence, they are easily controlled by enemy casters for use as cannon fodder during invasions.",
 			"type": "normal",
 			"weight": 0,
+			"radius": 0.3,
 			"levels": 2,
 			"behavior": "enemy_ground_standard",
 			"data": [
@@ -44,10 +45,11 @@
 		},
 		"originium_slug_alpha": {
 			"name": "Originium Slug Alpha",
-			"color": "#fe8734",
+			"color": ["#222218", "#fe8734"],
 			"description": "An infected wild creature that is more dangerous than a normal Originium Slug. Due to their low intelligence, they are easily controlled by enemy casters for use as cannon fodder during invasions.",
 			"type": "normal",
 			"weight": 0,
+			"radius": 0.3,
 			"levels": 2,
 			"behavior": "enemy_ground_standard",
 			"data": [

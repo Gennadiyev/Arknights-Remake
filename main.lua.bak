@@ -1,8 +1,8 @@
 local colors = require("libs.colors")
 local profiler = require("libs.profiler")
-local fpsGraph = profiler:new('fps', 30, 0, 70, 40)
-local memGraph = profiler:new('mem', 130, 0, 70, 40)
-local dtGraph = profiler:new('custom', 230, 0, 70, 40)
+local fpsGraph = profiler:new('fps', 30, 10, 80, 50)
+local memGraph = profiler:new('mem', 130, 10, 80, 50)
+local dtGraph = profiler:new('custom', 230, 10, 80, 50)
 local json = require("libs.json")
 local md5 = require("libs.md5")
 local easing = require("libs.easing")
@@ -112,6 +112,7 @@ local function pause()
 end
 
 function lg.gradientrectangle(x, y, w, h, color1, color2, direction, segments, easefunc)
+	local c = {lg.getColor()}
 	if direction == nil then direction = "lr" end
 	if easefunc == nil then easefunc = easing.linear end
 	if segments == nil then segments = 10 end
@@ -158,6 +159,7 @@ function lg.gradientrectangle(x, y, w, h, color1, color2, direction, segments, e
 		)
 		lg.rectangle("fill", x, y+My, w, h-My)
 	end
+	lg.setColor(c)
 end
 
 function lg.drawroundedbutton(text, x, y, w, h, isFilled, faceColor, backColor)
@@ -210,6 +212,7 @@ end
 
 function love.load()
 	T = 0
+	RunTime = 0
 	lw.setFullscreen(true)
 end
 
@@ -225,7 +228,7 @@ function warn(str)
 	debugMessages[#debugMessages + 1] = {
 		start = T or 0,
 		duration = 2,
-		text = str,
+		text = tostring(str),
 		color = colors.white
 	}
 end
@@ -355,6 +358,7 @@ local function levelPerform(command)
 			warn("Unknown 'from' in 'summon' in command: "..command)
 			return
 		end
+		local osx, osy = sx, sy
 		d.weight = e.weight
 		-- behavior = getBehavior(e.behavior,)
 		local p = {}
@@ -400,7 +404,7 @@ local function levelPerform(command)
 			data = d,
 			blocked = false,
 			program = p,
-			position = {sx, sy},
+			position = {osx, osy},
 			pathLength = pathLength,
 			movedLength = 0
 		}
@@ -412,6 +416,10 @@ end
 local function gameStart(level, team)
 	team = team['team_members']
 	for i = 1, #team do
+		team[i]['color'] = loaded_characters[team[i]['name']]['color']
+		for j = 1, #team[i]['color'] do
+			team[i]['color'][j] = colors.parse(team[i]['color'][j])
+		end
 		team[i]['state'] = "ready"
 		team[i]['position'] = {0, 0}
 		team[i]['image_quad'] = getImage(loaded_characters:getCharacterSkinQuad(team[i]['name'], team[i]['skin']))
@@ -425,6 +433,7 @@ local function gameStart(level, team)
 				operatorPerform(team[i], commands[k])
 			end
 		end
+		getBehavior(loaded_characters[team[i]['name']]['behavior'], team[i])
 	end
 	game = {
 		timeScale = 1,
@@ -501,7 +510,7 @@ function love.draw()
 				local e = game.enemies[i]
 				lg.setColor(game.enemies[i]['color'], 1)
 				local dx, dy = mapFromGridCenter(e.position[1], e.position[2])
-				lg.circle("fill", dx, dy, game.param.blockSize * 0.5)
+				lg.circle("fill", dx, dy, game.param.blockSize * 0.25)
 			end
 			for y = 1, #map do
 				for x = 1, #map[1] do
@@ -568,6 +577,29 @@ function love.draw()
 			end
 			local cardWidth = floor(w / 12)
 			local cardHeight = cardWidth / 18 * 35
+			if game.focusedOperator then
+				if game.focusedOperatorOnPlayfield then
+					lg.setColor(1, 1, 1, max(0.2, (0.1 + game.focusedOperatorOnPlayfieldTime - RunTime) * 10))
+					local s = min(w * 0.5 / game.focusedOperator['image_full']:getWidth(), h / game.focusedOperator['image_full']:getHeight()) * 1.3
+					lg.draw(game.focusedOperator['image_full'], -w * 0.3 + easing.outCubic(min(0.2, RunTime - game.focusedOperatorOnPlayfieldTime), 0, -w*0.07, 0.2) + easing.outCubic(min(0.14, RunTime - game.lastOperatorFocus), 0, w * 0.1, 0.14), h * 0.6, 0, s, s, 0, game.focusedOperator['image_full']:getHeight() * 0.5)
+				else
+					lg.gradientrectangle(0, 0, w * 0.3, h, colors.transparent(colors.white, 0.6), colors.transparent(colors.white, 0), 'lr', 150, easing.outCubic)
+					lg.setColor(1, 1, 1, 1)
+					local s = min(w * 0.5 / game.focusedOperator['image_full']:getWidth(), h / game.focusedOperator['image_full']:getHeight()) * 1.3
+					lg.draw(game.focusedOperator['image_full'], -w * 0.3 + easing.outCubic(min(0.14, RunTime - game.lastOperatorFocus), 0, w * 0.1, 0.14), h * 0.6, 0, s, s, 0, game.focusedOperator['image_full']:getHeight() * 0.5)
+				end
+				if game.focusedOperatorPosition then
+					local lx, ly = mapFromGridCenter(game.focusedOperatorPosition[1], game.focusedOperatorPosition[2])
+					lg.setLineWidth(2)
+					lg.setColor(colors.white)
+					local hbs = game.param.blockSize * 0.67
+					lg.line(lx, 0, lx, ly - hbs)
+					lg.line(lx, ly + hbs, lx, h)
+					lg.line(0, ly, lx - hbs, ly)
+					lg.line(lx + hbs, ly, w, ly)
+				end
+			end
+			lg.gradientrectangle(0, h - cardHeight, w, cardHeight, colors.transparent(colors.black, 0), colors.transparent(colors.black, 1), 'td', cardHeight * 0.5, easing.inCubic)
 			for i = 1, #game.team do
 				if game.team[i]['state'] == "ready" then
 					if game.team[i]['data']['cost'] < game['cost'] then
@@ -636,9 +668,17 @@ function love.draw()
 					)
 					lg.draw()
 				elseif game.team[i]['state'] == "battle" then
-
+					
 				end
 			end
+			lg.setFont(fontBook)
+			lg.gradientrectangle(0, 0, w, lg:getFont():getHeight() * 2, colors.transparent(colors.black, 1), colors.transparent(colors.black, 0), 'td', 40, easing.outCubic)
+			
+			lg.setColor(1, 1, 1, 1)
+			--function lg.gradientrectangle(x, y, w, h, color1, color2, direction, segments, easefunc)
+			lg.setFont(fontTitle)
+			lg.gradientrectangle(0, h - cardHeight - lg:getFont():getHeight() * 1.4, cardWidth * 2, lg.getFont():getHeight() * 1.4, colors.transparent(colors.black, 1), colors.transparent(colors.black, 0), "lr", 33, easing.inQuad)
+			lg.printf({colors.white, "Cost: ", colors.accent, tostring(game.cost)}, 15, h - cardHeight - lg:getFont():getHeight() * 1.2, w, "left")
 		end
 	elseif teamEditing then
 		lg.setFont(fontTitle)
@@ -756,6 +796,7 @@ function love.draw()
 						lg.rectangle("fill", hereX, hereY + cardHeight * 0.3, 3, cardHeight * 0.4)
 					end
 					lg.setColor(1, 1, 1, 1)
+					lg.setFont(fontBold)
 					lg.printf({colors.dim, levels[i]['code']:sub(1, easing.outCubic(levelLoadedDuration, 1, #levels[i]['code'], 0.5))}, hereX + 21, hereY + cardHeight * 0.5 - fontBold:getHeight() * 0.5 + 3, w * 0.46, "left")
 					lg.printf({colors.white, levels[i]['code']:sub(1, easing.outCubic(levelLoadedDuration, 1, #levels[i]['code'], 0.5))}, hereX + 18, hereY + cardHeight * 0.5 - fontBold:getHeight() * 0.5, w * 0.46, "left")
 				end
@@ -793,9 +834,14 @@ function love.draw()
 	dtGraph:draw()
 end
 
-warn("Developer Preview")
+warn("Dev Preview")
 
 function love.update(dt)
+	fpsGraph:update(dt)
+	memGraph:update(dt)
+	dtGraph:update(dt, math.floor(dt * 1000))
+	dtGraph.label = 'dt: ' ..  round(dt, 4)
+	RunTime = RunTime + dt
 	if game then
 		dt = dt * game.timeScale
 	end
@@ -929,23 +975,49 @@ function love.update(dt)
 		end
 		kanbanMessage = loaded_characters:getGreetingMessage(doctor['kanban']['name'])
 	end
-	fpsGraph:update(dt)
- 	memGraph:update(dt)
-	dtGraph:update(dt, math.floor(dt * 1000))
-	dtGraph.label = 'dt: ' ..  round(dt, 4)
 end
 
 function love.touchpressed(id, x, y, dx, dy)
 	if game then
 		local cardWidth = floor(w / 12)
 		local cardHeight = cardWidth / 18 * 35
-		if y > h - cardHeight then
-			warn("GEKKO!")
+		if y > h - cardHeight and not(game.focusedOperator) then
 			-- Selecting heros
 			local heroSelected = floor(x / cardWidth) + 1
 			if heroSelected <= #game.team then
 				warn("Selecting hero "..game.team[heroSelected]['name'])
 				game.focusedOperator = game.team[heroSelected]
+				game.focusedOperatorOnPlayfield = false
+				game.focusedOperatorOnPlayfieldTime = RunTime
+				game.lastOperatorFocus = RunTime
+				game.timeScaleLast = game.timeScale
+				game.timeScale = 0.1
+				moveRegister[#moveRegister + 1] = {
+					id = id,
+					onMoved = function(id, cx, cy, dx, dy)
+						if math.abs(cx - x) + math.abs(cy - y) > cardWidth then
+							if not(game.focusedOperatorOnPlayfield) then
+								game.focusedOperatorOnPlayfield = true
+								game.focusedOperatorOnPlayfieldTime = RunTime
+							end
+							local mtgx, mtgy = mapToGrid(cx, cy)
+							game.focusedOperatorPosition = {mtgx, mtgy}
+						else
+							if game.focusedOperatorOnPlayfield then
+								game.focusedOperatorOnPlayfield = false
+								game.focusedOperatorOnPlayfieldTime = RunTime
+							end
+							game.focusedOperatorPosition = false
+						end
+					end,
+					onReleased = function(id, x, y, dx, dy)
+						game.timeScale = game.timeScaleLast
+						game.focusedOperator = false
+						game.focusedOperatorOnPlayfieldTime = 0
+						game.focusedOperatorOnPlayfield = false
+						game.focusedOperatorPosition = false
+					end
+				}
 			end
 		else
 			if game.focusedOperator then
@@ -1000,9 +1072,17 @@ end
 
 function love.keypressed(key)
 	if game then
-		pause()
+		if key == "escape" then
+			pause()
+		elseif key == "1" then
+			game.timeScale = 1
+		elseif key == "2" then
+			game.timeScale = 2
+		elseif key == "3" then
+			game.timeScale = 4
+		end
 	elseif teamEditing then
-		teamEditing = false	
+		teamEditing = false
 	end
 end
 

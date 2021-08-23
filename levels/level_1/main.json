@@ -1,10 +1,10 @@
 {
-	"code": "ALPHA",
+	"code": "KUN-T-1",
 	"name": "Level Test",
 	"cover": "cover.jpg",
 	"author": "Kunologist",
 	"difficulty": "Easy",
-	"description": "Test level description",
+	"description": "Test level",
 	"level_id": "a8c4eeb934e0d9cf2aabbdf96a2782d3",
 	"dimension": [10, 7],
 	"map": [
@@ -18,7 +18,7 @@
 	],
 	"enemy_count": 3,
 	"life": 3,
-	"cost_init": 0,
+	"cost_init": 15,
 	"cost_regen": 1,
 	"program": [
 		"wait 1",

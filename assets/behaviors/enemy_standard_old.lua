@@ -1,5 +1,5 @@
 --[[
-    javascript:document.documentElement.webkitRequestFullscreen();
+    avascript:document.documentElement.webkitRequestFullscreen();
 ]]
 
 local eps = 0.02

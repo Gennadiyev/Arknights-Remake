@@ -15,6 +15,13 @@
 			"skill_default": 1,
 			"affinity": 0,
 			"unlocked_modifiers": ["gift", "token_1"]
+		},
+		{
+			"name": "Eyjafjalla",
+			"skins": ["Standard"],
+			"skill_default": 1,
+			"affinity": 0,
+			"unlocked_modifiers": ["gift", "token_1"]
 		}
 	],
 	"last_selected_team": 1,
@@ -27,6 +34,12 @@
 					"skin": "Letters from Wesex",
 					"skill": 1,
 					"unlocked_modifiers": ["gift", "token_1"]
+				},
+				{
+					"name": "Eyjafjalla",
+					"skin": "Elite",
+					"skill": 1,
+					"unlocked_modifiers": ["gift"]
 				}
 			]
 		}

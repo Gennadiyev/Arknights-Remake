@@ -1,6 +1,6 @@
 {
 	"meta": {
-		"type": "guard",
+		"class": "guard",
 		"rarity": 3,
 		"name": "Melantha",
 		"gender": "female"
@@ -24,8 +24,8 @@
 	},
 	"behavior": "operator_melee_standard",
 	"basics": {
-		"health": 2620,
-		"attack": 673,
+		"health": 2745,
+		"attack": 738,
 		"defence": 155,
 		"cost": 15,
 		"magic_resistance": 0,
@@ -34,9 +34,8 @@
 		"attack_speed": 100,
 		"attack_prepare": 0.3,
 		"attack_period": [1.5],
-		"is_attack_all_blocked_enemies": false,
-		"is_healable": true,
-		"taunt": 1
+		"taunt": 1,
+		"place": "ground"
 	},
 	"range": [
 		[0, 0],
@@ -50,7 +49,7 @@
 			"cost": 40,
 			"duration": 20,
 			"effect": [
-				"atk multiply 1.50 duration 20"
+				"atk multiply 1.50 @duration=20"
 			]
 		}
 	],

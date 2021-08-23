@@ -1,8 +1,16 @@
+DEBUG_MODE = false
+
 local colors = require("libs.colors")
-local profiler = require("libs.profiler")
-local fpsGraph = profiler:new('fps', 30, 10, 80, 50)
-local memGraph = profiler:new('mem', 130, 10, 80, 50)
-local dtGraph = profiler:new('custom', 230, 10, 80, 50)
+local profiler
+local fpsGraph
+local memGraph
+local dtGraph
+if DEBUG_MODE then
+	profiler = require("libs.profiler")
+	fpsGraph = profiler:new('fps', 30, 10, 80, 50)
+	memGraph = profiler:new('mem', 130, 10, 80, 50)
+	dtGraph = profiler:new('custom', 230, 10, 80, 50)
+end
 local json = require("libs.json")
 local md5 = require("libs.md5")
 local easing = require("libs.easing")
@@ -23,6 +31,7 @@ PATH_PREFIX_ENEMIES = "assets/enemies/"
 PATH_PREFIX_DRAWABLES = "assets/drawables/"
 PATH_PREFIX_LEVELS = "levels/"
 PATH_PREFIX_BEHAVIORS = "assets/behaviors/"
+PATH_PREFIX_FONTS = "assets/fonts/"
 
 BEGIN_OFFSET = 2
 
@@ -36,12 +45,14 @@ for k, v in pairs(drawables) do
 end
 
 local w, h = lg.getWidth(), lg.getHeight()
-local fontTitle = lg.newFont("sf-pro-display-bold.ttf", h * 0.050)
-local fontLevel = lg.newFont("sf-pro-display-bold.ttf", h * 0.100)
-local fontMain = lg.newFont("blender-book.ttf", h * 0.025)
-local fontBold = lg.newFont("novecento-wide-bold.ttf", h * 0.060)
-local fontClean = lg.newFont("sf-pro-display.ttf", h * 0.025)
-local fontBook = lg.newFont("blender-book.ttf", h * 0.027)
+local fontTitle = lg.newFont(PATH_PREFIX_FONTS.."sf-pro-display-bold.ttf", h * 0.050)
+local fontLevel = lg.newFont(PATH_PREFIX_FONTS.."sf-pro-display-bold.ttf", h * 0.110)
+local fontMain = lg.newFont(PATH_PREFIX_FONTS.."blender-book.ttf", h * 0.025)
+local fontBold = lg.newFont(PATH_PREFIX_FONTS.."novecento-wide-bold.ttf", h * 0.060)
+local fontClean = lg.newFont(PATH_PREFIX_FONTS.."sf-pro-display.ttf", h * 0.025)
+local fontBook = lg.newFont(PATH_PREFIX_FONTS.."blender-book.ttf", h * 0.027)
+local fontButter = lg.newFont(PATH_PREFIX_FONTS.."butter-regular.ttf", h * 0.060)
+local fontBarcode = lg.newFont(PATH_PREFIX_FONTS.."barcode.ttf", h * 0.110)
 
 local kanbanMessage = ""
 local kanban
@@ -112,6 +123,7 @@ local function pause()
 end
 
 function lg.gradientrectangle(x, y, w, h, color1, color2, direction, segments, easefunc)
+	local c = {lg.getColor()}
 	if direction == nil then direction = "lr" end
 	if easefunc == nil then easefunc = easing.linear end
 	if segments == nil then segments = 10 end
@@ -158,6 +170,7 @@ function lg.gradientrectangle(x, y, w, h, color1, color2, direction, segments, e
 		)
 		lg.rectangle("fill", x, y+My, w, h-My)
 	end
+	lg.setColor(c)
 end
 
 function lg.drawroundedbutton(text, x, y, w, h, isFilled, faceColor, backColor)
@@ -210,6 +223,7 @@ end
 
 function love.load()
 	T = 0
+	RunTime = 0
 	lw.setFullscreen(true)
 end
 
@@ -222,12 +236,15 @@ local function cashTostring(cash)
 end
 
 function warn(str)
-	debugMessages[#debugMessages + 1] = {
-		start = T or 0,
-		duration = 2,
-		text = tostring(str),
-		color = colors.white
-	}
+	if DEBUG_MODE then
+		debugMessages[#debugMessages + 1] = {
+			start = T or 0,
+			duration = 2,
+			text = tostring(str),
+			color = colors.white
+		}
+		return
+	end
 end
 
 local function operatorPerform(operator, command)
@@ -337,6 +354,8 @@ local function levelPerform(command)
 			warn("Unknown enemy & level: "..enemyType.." Lv."..tostring(enemyLevel))
 			return
 		end
+		d.weight = e.weight
+		d.max_health = d.health
 		local encountered = false
 		for i = 1, #game.encounteredEnemies do
 			if game.encounteredEnemies[i] == enemyType then
@@ -356,7 +375,6 @@ local function levelPerform(command)
 			return
 		end
 		local osx, osy = sx, sy
-		d.weight = e.weight
 		-- behavior = getBehavior(e.behavior,)
 		local p = {}
 		local pathLength = 0
@@ -396,14 +414,13 @@ local function levelPerform(command)
 		local enemy = {
 			type = enemyType,
 			color = colors.parse(e.color),
+			radius = e.radius,
 			name = e.name,
 			level = enemyLevel,
 			data = d,
 			blocked = false,
 			program = p,
-			position = {osx, osy},
-			pathLength = pathLength,
-			movedLength = 0
+			position = {osx, osy}
 		}
 		getBehavior(e.behavior, enemy)
 		game.enemies[#game.enemies + 1] = enemy
@@ -413,12 +430,20 @@ end
 local function gameStart(level, team)
 	team = team['team_members']
 	for i = 1, #team do
+		team[i]['color'] = loaded_characters[team[i]['name']]['color']
+		for j = 1, #team[i]['color'] do
+			team[i]['color'][j] = colors.parse(team[i]['color'][j])
+		end
+		team[i]['blocked'] = {}
+		team[i]['skillCost'] = 0
+		team[i]['skillActive'] = false
 		team[i]['state'] = "ready"
 		team[i]['position'] = {0, 0}
 		team[i]['image_quad'] = getImage(loaded_characters:getCharacterSkinQuad(team[i]['name'], team[i]['skin']))
 		team[i]['image_full'] = getImage(loaded_characters:getCharacterSkin(team[i]['name'], team[i]['skin']))
 		team[i]['skill'] = loaded_characters[team[i]['name']]['skills'][team[i]['skill']]
 		team[i]['data'] = loaded_characters[team[i]['name']]['basics']
+		team[i]['range'] = loaded_characters[team[i]['name']]['range']
 		team[i]['data']['max_health'] = team[i]['data']['health']
 		for j = 1, #team[i]['unlocked_modifiers'] do
 			local commands = loaded_characters[team[i]['name']]['modifiers'][team[i]['unlocked_modifiers'][j]]
@@ -462,6 +487,9 @@ function love.draw()
 					easing.outQuad(T - gameStartTime, colors.black[3], -colors.black[3], 1.5),
 					1
 				)
+				lg.setColor(colors.white[1], colors.white[2], colors.white[3], easing.outQuad(T - gameStartTime, 0, 0.25, 1.5))
+				lg.setFont(fontBarcode)
+				lg.print(game.level.code, easing.outCubic(T - gameStartTime, w * 0.2, -0.1 * w, 1.5), h * 0.2)
 				lg.setColor(colors.white[1], colors.white[2], colors.white[3], easing.outQuad(T - gameStartTime, 0, 1, 1.5))
 				lg.setFont(fontLevel)
 				lg.print(game.level.code, easing.outCubic(T - gameStartTime, w * 0.2, -0.1 * w, 1.5), h * 0.2)
@@ -475,6 +503,9 @@ function love.draw()
 					easing.outQuad(T - gameStartTime - 1.5, 0, colors.level.background[3], 1.5),
 					1
 				)
+				lg.setColor(colors.white[1], colors.white[2], colors.white[3], easing.inQuad(T - gameStartTime - 1.5, 0.25, -0.25, 1.5))
+				lg.setFont(fontBarcode)
+				lg.print(game.level.code, easing.outCubic(T - gameStartTime, w * 0.2, -0.1 * w, 1.5), h * 0.2)
 				lg.setColor(colors.white[1], colors.white[2], colors.white[3], easing.inQuad(T - gameStartTime - 1.5, 1, -1, 1.5))
 				lg.setFont(fontLevel)
 				lg.print(game.level.code, easing.inCubic(T - gameStartTime - 1.5, w * 0.1, -0.1 * w, 1.5), h * 0.2)
@@ -499,12 +530,6 @@ function love.draw()
 				}
 			end
 			local map = game.level.map
-			for i = 1, #game.enemies do
-				local e = game.enemies[i]
-				lg.setColor(game.enemies[i]['color'], 1)
-				local dx, dy = mapFromGridCenter(e.position[1], e.position[2])
-				lg.circle("fill", dx, dy, game.param.blockSize * 0.25)
-			end
 			for y = 1, #map do
 				for x = 1, #map[1] do
 					if map[y][x] ~= 0 then
@@ -518,9 +543,9 @@ function love.draw()
 								game.param.blockSize - game.param.blockMargin,
 								game.param.blockSize - game.param.blockMargin
 							)
-						elseif map[y][x] == 2 then -- air solid
+						elseif map[y][x] == 2 then -- elevated solid
 							lg.setLineWidth(2)
-							lg.setColor(colors.level.air)
+							lg.setColor(colors.level.elevated)
 							lg.rectangle(
 								"line",
 								game.param.xm + (x-1) * game.param.blockSize + game.param.blockMargin * 0.5,
@@ -570,9 +595,73 @@ function love.draw()
 			end
 			local cardWidth = floor(w / 12)
 			local cardHeight = cardWidth / 18 * 35
+			if game.focusedOperator then
+				if game.focusedOperatorOnPlayfield then
+					lg.setColor(1, 1, 1, max(0.2, (0.1 + game.focusedOperatorOnPlayfieldTime - RunTime) * 10))
+					local s = min(w * 0.5 / game.focusedOperator['image_full']:getWidth(), h / game.focusedOperator['image_full']:getHeight()) * 1.3
+					lg.draw(game.focusedOperator['image_full'], -w * 0.3 + easing.outCubic(min(0.2, RunTime - game.focusedOperatorOnPlayfieldTime), 0, -w*0.05, 0.2) + easing.outCubic(min(0.14, RunTime - game.lastOperatorFocus), 0, w * 0.1, 0.14), h * 0.6, 0, s, s, 0, game.focusedOperator['image_full']:getHeight() * 0.5)
+				else
+					lg.gradientrectangle(0, 0, w * 0.3, h, colors.transparent(colors.white, 0.4), colors.transparent(colors.white, 0), 'lr', 150, easing.outQuad)
+					lg.setColor(1, 1, 1, 1)
+					local s = min(w * 0.5 / game.focusedOperator['image_full']:getWidth(), h / game.focusedOperator['image_full']:getHeight()) * 1.3
+					lg.draw(game.focusedOperator['image_full'], -w * 0.3 + easing.outCubic(min(0.14, RunTime - game.lastOperatorFocus), 0, w * 0.1, 0.14), h * 0.6, 0, s, s, 0, game.focusedOperator['image_full']:getHeight() * 0.5)
+				end
+				if game.focusedOperatorPosition then
+					local ox, oy = game.focusedOperatorPosition[1], game.focusedOperatorPosition[2]
+					local lx, ly = mapFromGridCenter(ox, oy)
+					local hbs = game.param.blockSize * 0.5
+					local bm = game.param.blockMargin
+					if game.waitForDirection then
+						local r = hbs * 3 + 20 * sin(RunTime * 2)
+						lg.setLineWidth(4)
+						lg.setColor(colors.transparent(game.focusedOperator.color[1]), 1)
+						lg.line(lx - r, ly, lx, ly - r)
+						lg.line(lx, ly - r, lx + r, ly)
+						lg.line(lx + r, ly, lx, ly + r)
+						lg.line(lx, ly + r, lx - r, ly)
+						local range = game.focusedOperator['range']
+						local function light(bx, by)
+							local cx, cy = mapFromGridCenter(bx, by)
+							lg.setColor(colors.transparent(colors.white, 0.5))
+							lg.rectangle("fill", cx - hbs, cy - hbs, hbs * 2, hbs * 2)
+						end
+						for i = 1, #range do
+							if game.focusedOperatorDirection == "right" then
+								light(range[i][1] + ox, range[i][2] + oy)
+							elseif game.focusedOperatorDirection == "left" then
+								light(range[i][1] + ox, -range[i][2] + oy)
+							elseif game.focusedOperatorDirection == "up" then
+								light(-range[i][2] + ox, range[i][1] + oy)
+							elseif game.focusedOperatorDirection == "down" then
+								light(range[i][2] + ox, range[i][1] + oy)
+							end
+						end
+					else
+						lg.setLineWidth(2)
+						lg.setColor(colors.white)
+						lg.line(lx, 0, lx, ly - hbs - bm)
+						lg.line(lx, ly + hbs + bm, lx, h)
+						lg.line(0, ly, lx - hbs - bm, ly)
+						lg.line(lx + hbs + bm, ly, w, ly)
+					end
+					if game.focusedOperatorDirection then
+						if game.focusedOperatorDirection == "left" then
+							lg.gradientrectangle(lx - hbs * 0.8, ly - hbs * 0.8, hbs * 1.6, hbs * 1.6, colors.transparent(game.focusedOperator.color[1],1), colors.transparent(game.focusedOperator.color[2],1), 'lr', hbs * 1.6, easing.linear)
+						elseif game.focusedOperatorDirection == "right" then
+							lg.gradientrectangle(lx - hbs * 0.8, ly - hbs * 0.8, hbs * 1.6, hbs * 1.6, colors.transparent(game.focusedOperator.color[2],1), colors.transparent(game.focusedOperator.color[1],1), 'lr', hbs * 1.6, easing.linear)
+						elseif game.focusedOperatorDirection == "up" then
+							lg.gradientrectangle(lx - hbs * 0.8, ly - hbs * 0.8, hbs * 1.6, hbs * 1.6, colors.transparent(game.focusedOperator.color[1],1), colors.transparent(game.focusedOperator.color[2],1), 'td', hbs * 1.6, easing.linear)
+						elseif game.focusedOperatorDirection == "down" then
+							lg.gradientrectangle(lx - hbs * 0.8, ly - hbs * 0.8, hbs * 1.6, hbs * 1.6, colors.transparent(game.focusedOperator.color[2],1), colors.transparent(game.focusedOperator.color[1],1), 'td', hbs * 1.6, easing.linear)
+						end
+					end
+				end
+			end
+			lg.gradientrectangle(0, h - cardHeight, w, cardHeight, colors.transparent(colors.black, 0), colors.transparent(colors.black, 1), 'td', cardHeight * 0.5, easing.inCubic)
+			lg.setFont(fontBook)
 			for i = 1, #game.team do
 				if game.team[i]['state'] == "ready" then
-					if game.team[i]['data']['cost'] < game['cost'] then
+					if game['cost'] >= game.team[i]['data']['cost'] then
 						-- READY and CAN_BE_APPOINTED
 						local d = game.team[i]['image_quad']
 						lg.gradientrectangle(
@@ -583,6 +672,7 @@ function love.draw()
 							50
 						)
 						lg.setColor(1, 1, 1, 1)
+						lg.print(tostring(game.team[i]['data']['cost']), cardWidth * (i-1) + cardHeight * 0.12, h - cardHeight)
 						lg.draw(
 							d,
 							cardWidth * (i-1),
@@ -593,6 +683,7 @@ function love.draw()
 							0,
 							d:getHeight()
 						)
+						lg.draw(drawables.cost, cardWidth * (i-1), h - cardHeight, 0, cardHeight * 0.1 / drawables.cost:getWidth(), nil)
 					else
 						local d = game.team[i]['image_quad']
 						local costRate = game.cost / game.team[i]['data']['cost']
@@ -605,6 +696,7 @@ function love.draw()
 							easing.inQuad
 						)
 						lg.setColor(0.5, 0.5, 0.5, 1)
+						lg.print(tostring(game.team[i]['data']['cost']), cardWidth * (i-1) + cardHeight * 0.12, h - cardHeight)
 						lg.draw(
 							d,
 							cardWidth * (i-1),
@@ -615,17 +707,19 @@ function love.draw()
 							0,
 							d:getHeight()
 						)
+						lg.draw(drawables.cost, cardWidth * (i-1), h - cardHeight, 0, cardHeight * 0.1 / drawables.cost:getWidth(), nil)
 					end
 				elseif game.team[i]['state'] == "revive" then
 					local d = game.team[i]['image_quad']
 					lg.gradientrectangle(
-						cardWidth * (i-1), h - cardHeight, cardWidth, cardHeight,
+						cardWidth * (i-1), h - easing.linear(game.team[i]['reviveDuration'], 0, cardHeight, game.team[i].data.revive_period), cardWidth, cardHeight,
 						{colors.level.revive[1], colors.level.revive[2], colors.level.revive[3], 0.0},
-						{colors.level.revive[1], colors.level.revive[2], colors.level.revive[3], 1.0},
+						{colors.level.revive[1], colors.level.revive[2], colors.level.revive[3], 1},
 						"td",
 						50
 					)
 					lg.setColor(0.4, 0.4, 0.4, 0.4)
+					lg.print(tostring(game.team[i]['data']['cost']), cardWidth * (i-1) + cardHeight * 0.12, h - cardHeight)
 					lg.draw(
 						d,
 						cardWidth * (i-1),
@@ -636,27 +730,81 @@ function love.draw()
 						0,
 						d:getHeight()
 					)
-					lg.draw()
+					lg.draw(drawables.cost, cardWidth * (i-1), h - cardHeight, 0, cardHeight * 0.1 / drawables.cost:getWidth(), nil)
+					lg.setColor(colors.white)
+					lg.setFont(fontBook)
+					lg.printf(string.format("%.1f", game.team[i]['reviveDuration']), cardWidth * (i-1), h - cardHeight * 0.5 - lg:getFont():getHeight() * 0.5, cardWidth, "center")
+					lg.setLineWidth(4)
+					lg.arc("line", "open", cardWidth * (i-0.5), h - cardHeight * 0.5, cardWidth * 0.3, -pi * 0.5, easing.linear(game.team[i]['reviveDuration'], -pi*0.5, pi*2, game.team[i]['data']['revive_period']))
+					-- lg.setColor(colors.transparent(colors.level.revive, 0.5))
+					-- lg.rectangle("fill", cardWidth * (i-1), easing.linear(game.team[i]['reviveDuration'], h - cardHeight, cardHeight, game.team[i]['data']['revive_period']), cardWidth, cardHeight)
 				elseif game.team[i]['state'] == "battle" then
-
+					local ox, oy = game.team[i]['position'][1], game.team[i]['position'][2]
+					local lx, ly = mapFromGridCenter(ox, oy)
+					local hbs = game.param.blockSize * 0.5
+					local bm = game.param.blockMargin
+					if game.team[i]['direction'] == "left" then
+						lg.gradientrectangle(lx - hbs * 0.9 + 2, ly - hbs * 0.9 + 2, hbs * 1.8 - 4, hbs * 1.8 - 4, colors.transparent(game.team[i].color[1],1), colors.transparent(game.team[i].color[2],1), 'lr', hbs * 1.8 - 4, easing.linear)
+					elseif game.team[i]['direction'] == "right" then
+						lg.gradientrectangle(lx - hbs * 0.9 + 2, ly - hbs * 0.9 + 2, hbs * 1.8 - 4, hbs * 1.8 - 4, colors.transparent(game.team[i].color[2],1), colors.transparent(game.team[i].color[1],1), 'lr', hbs * 1.8 - 4, easing.linear)
+					elseif game.team[i]['direction'] == "up" then
+						lg.gradientrectangle(lx - hbs * 0.9 + 2, ly - hbs * 0.9 + 2, hbs * 1.8 - 4, hbs * 1.8 - 4, colors.transparent(game.team[i].color[1],1), colors.transparent(game.team[i].color[2],1), 'td', hbs * 1.8 - 4, easing.linear)
+					elseif game.team[i]['direction'] == "down" then
+						lg.gradientrectangle(lx - hbs * 0.9 + 2, ly - hbs * 0.9 + 2, hbs * 1.8 - 4, hbs * 1.8 - 4, colors.transparent(game.team[i].color[2],1), colors.transparent(game.team[i].color[1],1), 'td', hbs * 1.8 - 4, easing.linear)
+					end
+					lg.setColor(colors.level.operator_health_bar)
+					lg.setLineWidth(3)
+					lg.line(lx - hbs * 0.9 + 2, ly + hbs * 0.9 - 3, easing.linear(game.team[i]['data']['health'], lx - hbs * 0.9 + 2, hbs * 1.8 - 4, game.team[i]['data']['max_health']), ly + hbs * 0.9 - 3)
+					if game.team[i].skillCost >= game.team[i].skill.cost then
+						lg.setColor(colors.transparent(colors.level.operator_skill_bar, math.random()))
+						lg.line(lx - hbs * 0.9 + 2, ly + hbs * 0.9 - 6, easing.linear(game.team[i]['skillCost'], lx - hbs * 0.9 + 2, hbs * 1.8 - 4, game.team[i]['skill']['cost']), ly + hbs * 0.9 - 6)
+					elseif game.team[i].skillActive then
+						lg.setColor(colors.level.operator_skill_bar)
+						lg.line(lx - hbs * 0.9 + 2, ly + hbs * 0.9 - 6, easing.linear(game.team[i]['skillActive'], lx - hbs * 0.9 + 2, hbs * 1.8 - 4, game.team[i]['skill']['duration']), ly + hbs * 0.9 - 6)
+					else
+						lg.setColor(colors.level.operator_skill_bar)
+						lg.line(lx - hbs * 0.9 + 2, ly + hbs * 0.9 - 6, easing.linear(game.team[i]['skillCost'], lx - hbs * 0.9 + 2, hbs * 1.8 - 4, game.team[i]['skill']['cost']), ly + hbs * 0.9 - 6)
+					end
 				end
 			end
+			for i = 1, #game.enemies do
+				local e = game.enemies[i]
+				local dx, dy = mapFromGridCenter(e.position[1], e.position[2])
+				lg.setColor(colors.transparent(e.color[1], 0.7))
+				lg.circle("fill", dx, dy, e.radius * game.param.blockSize)
+				lg.setColor(colors.transparent(e.color[2], 1))
+				lg.setLineWidth(3)
+				lg.arc("line", "open", dx, dy, e.radius * game.param.blockSize, 0, easing.linear(e.data.health, 0, 2 * pi, e.data.max_health))
+			end
+			
+			lg.setFont(fontBook)
+			lg.gradientrectangle(0, 0, w, lg:getFont():getHeight() * 2, colors.transparent(colors.black, 1), colors.transparent(colors.black, 0), 'td', 40, easing.outCubic)
+			
+			lg.setColor(1, 1, 1, 1)
+			--function lg.gradientrectangle(x, y, w, h, color1, color2, direction, segments, easefunc)
+			lg.setFont(fontButter)
+			local fh = lg:getFont():getHeight()
+			lg.gradientrectangle(0, h - cardHeight - fh * 1.4, cardWidth * 2, fh * 1.4, colors.transparent(colors.black, 1), colors.transparent(colors.black, 0), "lr", 50, easing.inCubic)
+			lg.setLineWidth(2)
+			lg.line(0, h - cardHeight, easing.linear(game.costRegenTimer / game.costRegenPeriod, 0, cardWidth * 2, 1), h - cardHeight)
+			lg.draw(drawables.cost, fh * 0.75, h - cardHeight - fh * 0.7, 0, fh / drawables.cost:getHeight() * 0.8, nil, drawables.cost:getWidth() * 0.5, drawables.cost:getHeight() * 0.5)
+			lg.printf({colors.white, tostring(game.cost)}, floor(fh * 1.5), floor(h - cardHeight - fh * 1.2), cardWidth * 2, "left")
 		end
 	elseif teamEditing then
 		lg.setFont(fontTitle)
 		lg.setColor(1, 1, 1, 1)
-		lg.printf({colors.white, "Preparation: ", colors.accent, teamEditing['team_name']}, w * 0.09, h * 0.19 - fontTitle:getHeight() * 0.5, w * 0.91, "left")
-		local hereX, hereY = floor(w * 0.12), floor(h * 0.3)
+		lg.printf({colors.white, "Preparation: ", colors.accent, teamEditing['team_name']}, w * 0.09, h * 0.14 - fontTitle:getHeight() * 0.5, w * 0.91, "left")
+		local hereX, hereY = floor(w * 0.12), floor(h * 0.225)
 		local cardWidth = floor(h * 0.15)
-		local cardMargin = floor(w * 0.02)
-		local cardHeight = floor(h * 0.31)
+		local cardMargin = floor(w * 0.024)
+		local cardHeight = floor(h * 0.32)
 		local teamMembers = teamEditing['team_members']
 		for i = 1, 12 do
 			lg.setColor(colors.white)
 			if i % 2 == 1 then
 				lg.gradientrectangle(hereX, hereY, cardWidth, cardHeight,
 					{colors.white[1], colors.white[2], colors.white[3], 0.0},
-					{colors.white[1], colors.white[2], colors.white[3], 1.0},
+					{colors.white[1], colors.white[2], colors.white[3], 0.6},
 					'td', 100, easing.outSine)
 				if teamMembers[i] then
 					lg.setColor(1, 1, 1, 1)
@@ -681,7 +829,7 @@ function love.draw()
 			else
 				lg.gradientrectangle(hereX, hereY, cardWidth, cardHeight,
 					{colors.white[1], colors.white[2], colors.white[3], 0.0},
-					{colors.white[1], colors.white[2], colors.white[3], 1.0},
+					{colors.white[1], colors.white[2], colors.white[3], 0.6},
 					'td', 100, easing.outSine)
 				if teamMembers[i] then
 					lg.setColor(1, 1, 1, 1)
@@ -715,13 +863,13 @@ function love.draw()
 	else
 		lg.setFont(fontTitle)
 		lg.setColor(1, 1, 1, 1)
-		lg.printf({colors.white, "Welcome, ", colors.accent, "Dr. ", doctor.name}, w * 0.09, h * 0.19 - fontTitle:getHeight() * 0.5, w * 0.91, "left")
+		lg.printf({colors.white, "Welcome, ", colors.accent, "Dr. ", doctor.name}, w * 0.09, h * 0.14 - fontTitle:getHeight() * 0.5, w * 0.91, "left")
 		lg.setFont(fontClean)
-		lg.drawroundedbutton("Administrator", w * 0.09, h * 0.27 - fontMain:getHeight() * 0.5, w * 0.13, fontMain:getHeight() * 1.8, true, colors.black, colors.accent) 
+		lg.drawroundedbutton("Administrator", w * 0.09, h * 0.22 - fontMain:getHeight() * 0.5, w * 0.13, fontMain:getHeight() * 1.8, true, colors.black, colors.accent) 
 		lg.setLineWidth(2)
-		lg.drawroundedbutton("Cash: "..cashTostring(doctor.cash), w * 0.23, h * 0.27 - fontMain:getHeight() * 0.5, w * 0.15, fontMain:getHeight() * 1.8, false, colors.white)
+		lg.drawroundedbutton("Cash: "..cashTostring(doctor.cash), w * 0.23, h * 0.22 - fontMain:getHeight() * 0.5, w * 0.15, fontMain:getHeight() * 1.8, false, colors.white)
 		if loadingString then
-			lg.printf({colors.white, loadingString}, w * 0.09, h * 0.4 - fontMain:getHeight() * 0.5, w * 0.91, "left")
+			lg.printf({colors.white, loadingString}, w * 0.09, h * 0.35 - fontMain:getHeight() * 0.5, w * 0.91, "left")
 		else
 			-- Display Levels
 			local hereX, hereY = w * 0.09, h * 0.4
@@ -758,6 +906,7 @@ function love.draw()
 						lg.rectangle("fill", hereX, hereY + cardHeight * 0.3, 3, cardHeight * 0.4)
 					end
 					lg.setColor(1, 1, 1, 1)
+					lg.setFont(fontBold)
 					lg.printf({colors.dim, levels[i]['code']:sub(1, easing.outCubic(levelLoadedDuration, 1, #levels[i]['code'], 0.5))}, hereX + 21, hereY + cardHeight * 0.5 - fontBold:getHeight() * 0.5 + 3, w * 0.46, "left")
 					lg.printf({colors.white, levels[i]['code']:sub(1, easing.outCubic(levelLoadedDuration, 1, #levels[i]['code'], 0.5))}, hereX + 18, hereY + cardHeight * 0.5 - fontBold:getHeight() * 0.5, w * 0.46, "left")
 				end
@@ -790,14 +939,23 @@ function love.draw()
 		lg.setColor(colors.transparent(debugMessages[i]['color'], easing.inQuad(T - debugMessages[i]['start'], 1, -1, debugMessages[i]['duration'])))
 		lg.printf(debugMessages[i]['text'], 14, lg.getFont():getHeight() * 1.4 * (i-1) + 14, w-28, "left")
 	end
-	fpsGraph:draw()
-	memGraph:draw()
-	dtGraph:draw()
+	if DEBUG_MODE then
+		fpsGraph:draw()
+		memGraph:draw()
+		dtGraph:draw()
+	end
 end
 
 warn("Dev Preview")
 
 function love.update(dt)
+	if DEBUG_MODE then
+		fpsGraph:update(dt)
+		memGraph:update(dt)
+		dtGraph:update(dt, math.floor(dt * 1000))
+		dtGraph.label = 'dt: ' ..  round(dt, 4)
+	end
+	RunTime = RunTime + dt
 	if game then
 		dt = dt * game.timeScale
 	end
@@ -808,6 +966,7 @@ function love.update(dt)
 		end
 	end
 	if game and T > game.startTime + BEGIN_OFFSET and not(game.pause) then
+		game.time = T
 		if game.life <= 0 then
 			warn("You lost!")
 		end
@@ -815,12 +974,15 @@ function love.update(dt)
 		game.costRegenTimer = game.costRegenTimer + dt
 		if game.costRegenTimer > game.costRegenPeriod then
 			game.cost = game.cost + 1
-			warn("Cost: "..game.cost)
 			game.costRegenTimer = 0
 		end
 		-- Update to all enemies
 		for i = #game.enemies, 1, -1 do
 			game.enemies[i]:update(game, dt)
+		end
+		-- Update to all team members
+		for i = 1, #game.team do
+			game.team[i]:update(game, dt)
 		end
 		-- See if all program ended
 		if not(game.programFinished) then
@@ -931,25 +1093,107 @@ function love.update(dt)
 		end
 		kanbanMessage = loaded_characters:getGreetingMessage(doctor['kanban']['name'])
 	end
-	fpsGraph:update(dt)
- 	memGraph:update(dt)
-	dtGraph:update(dt, math.floor(dt * 1000))
-	dtGraph.label = 'dt: ' ..  round(dt, 4)
 end
 
 function love.touchpressed(id, x, y, dx, dy)
 	if game then
 		local cardWidth = floor(w / 12)
 		local cardHeight = cardWidth / 18 * 35
-		if y > h - cardHeight then
+		if game.waitForDirection then
+			local mfgx, mfgy = mapFromGridCenter(game.focusedOperatorPosition[1], game.focusedOperatorPosition[2])
+			if abs(x - mfgx) + abs(y - mfgy) < game.param.blockSize * 2 then
+				moveRegister[#moveRegister + 1] = {
+					id = id,
+					onMoved = function(id, x, y, dx, dy)
+						if abs(x - mfgx) + abs(y - mfgy) > game.param.blockSize then
+							if abs(x - mfgx) > abs(y - mfgy) then
+								if x > mfgx then
+									game.focusedOperatorDirection = "right"
+								else
+									game.focusedOperatorDirection = "left"
+								end
+							else
+								if y > mfgy then
+									game.focusedOperatorDirection = "down"
+								else
+									game.focusedOperatorDirection = "up"
+								end
+							end
+						else
+							game.focusedOperatorDirection = false
+						end
+					end,
+					onReleased = function(id, x, y, dx, dy)
+						if game.focusedOperatorDirection then
+							game.focusedOperator['state'] = "battle"
+							game.focusedOperator['direction'] = game.focusedOperatorDirection
+							game.focusedOperator['position'] = game.focusedOperatorPosition
+							game.cost = game.cost - game.focusedOperator['data']['cost']
+							game.waitForDirection = false
+							game.timeScale = game.timeScaleLast
+							game.focusedOperator = false
+							game.focusedOperatorOnPlayfieldTime = 0
+							game.focusedOperatorOnPlayfield = false
+							game.focusedOperatorPosition = false
+							game.waitForDirection =false
+						end
+					end
+				}
+			else
+				game.waitForDirection = false
+				game.timeScale = game.timeScaleLast
+				game.focusedOperator = false
+				game.focusedOperatorOnPlayfieldTime = 0
+				game.focusedOperatorOnPlayfield = false
+				game.focusedOperatorPosition = false
+				game.waitForDirection =false
+			end
+		elseif y > h - cardHeight and not(game.focusedOperator) then
 			-- Selecting heros
 			local heroSelected = floor(x / cardWidth) + 1
 			if heroSelected <= #game.team then
 				warn("Selecting hero "..game.team[heroSelected]['name'])
+				game.waitForDirection = false
 				game.focusedOperator = game.team[heroSelected]
+				game.focusedOperatorOnPlayfield = false
+				game.focusedOperatorOnPlayfieldTime = RunTime
+				game.lastOperatorFocus = RunTime
+				game.timeScaleLast = game.timeScale
+				game.timeScale = 0.2
+				moveRegister[#moveRegister + 1] = {
+					id = id,
+					onMoved = function(id, cx, cy, dx, dy)
+						if abs(cx - x) + abs(cy - y) > cardWidth and cy < h - cardHeight * 0.5 and game.cost >= game.focusedOperator['data']['cost'] then
+							if not(game.focusedOperatorOnPlayfield) then
+								game.focusedOperatorOnPlayfield = true
+								game.focusedOperatorOnPlayfieldTime = RunTime
+							end
+							local mtgx, mtgy = mapToGrid(cx, cy)
+							game.focusedOperatorPosition = {mtgx, mtgy}
+						else
+							if game.focusedOperatorOnPlayfield then
+								game.focusedOperatorOnPlayfield = false
+								game.focusedOperatorOnPlayfieldTime = RunTime
+							end
+							game.focusedOperatorPosition = false
+						end
+					end,
+					onReleased = function(id, x, y, dx, dy)
+						if game.focusedOperatorOnPlayfield then
+							game.waitForDirection = true
+						else
+							game.waitForDirection = false
+							game.timeScale = game.timeScaleLast
+							game.focusedOperator = false
+							game.focusedOperatorOnPlayfieldTime = 0
+							game.focusedOperatorOnPlayfield = false
+							game.focusedOperatorPosition = false
+						end
+					end
+				}
 			end
 		else
-			if game.focusedOperator then
+			if game.focusedOperator and #love.touch.getTouches() == 1 then
 				game.focusedOperator = nil
 			else
 				local mtgx, mtgy = mapToGrid(x, y)
@@ -1009,6 +1253,8 @@ function love.keypressed(key)
 			game.timeScale = 2
 		elseif key == "3" then
 			game.timeScale = 4
+		elseif key == "0" then
+			game.timeScale = 13
 		end
 	elseif teamEditing then
 		teamEditing = false

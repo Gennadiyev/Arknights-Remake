@@ -14,9 +14,12 @@ local function wrapper(T)
     T.distance = false -- distance to invasion
     T.programPointer = 0 -- program pointer
     T.waitTime = 0 -- wait time if the program demands wait
+    T.blocked = false
     
-    function T:callback(event) -- callback function is called on each time an external operation is performed
+    function T:callback(game, event) -- callback function is called on each time an external operation is performed
+        if event == "summon" then
 
+        end
     end
     
     function T:kill(game) -- kill this instance
@@ -29,10 +32,18 @@ local function wrapper(T)
         return false
     end
 
+    function T:attack(game, target)
+        target.data.health = target.data.health - math.max(self.data.attack - target.data.defence, 0.05*self.data.attack)
+    end
+
     function T:update(game, dt)
         -- If currently the health is below 0, then kill
         if self.data.health < 0 then
             self:kill(game)
+        end
+        -- If the blocking target is not on battle, remove blocking status
+        if self.blocked and self.blocked.state ~= "battle" then
+            self.blocked = falsse
         end
         -- If waiting right now, then update waitTime and quit
         if self.waitTime > 0 then
@@ -52,9 +63,41 @@ local function wrapper(T)
             self:kill(game)
             return
         end
+        -- If blocked by other operator, attack phase propagate
+        if self.blocked then
+            if self.attackState.target == self.blocked then
+                self.attackState.attackPhaseDuration = self.attackState.attackPhaseDuration + dt
+                --
+                if self.attackState.attackPhase == 0 then
+                    -- preparation
+                    if self.attackState.attackPhaseDuration >= self.data['attack_prepare'] then
+                        -- preparation finished
+                        self.attackState.attackPhase = 1
+                        self.attackState.attackPhaseDuration = 0
+                    end
+                else
+                    if self.attackState.attackPhaseDuration >= self.data['attack_period'][self.attackState.attackPhase] then
+                        self.attackState.attackPhase = self.attackState.attackPhase + 1
+                        self.attackState.attackPhaseDuration = 0
+                        if self.attackState.attackPhase > #self.data['attack_period'] then
+                            self.attackState.attackPhase = 1
+                        end
+                        self:attack(game, self.blocked)
+                    end
+                end
+                --
+            else
+                self.attackState.target = self.blocked
+                self.attackState.attackPhase = 0
+                self.attackState.attackPhaseDuration = 0
+            end
+        else
+            self.attackState.attackPhase = 0
+            self.attackState.attackPhaseDuration = 0
+        end
         if task.type == "move" then
             -- Have I reached the destination?
-            if math.abs(self.position[1] - task.destination[1]) + math.abs(self.position[2] - task.destination[2]) < self.data.speed * 0.0334 then
+            if math.abs(self.position[1] - task.destination[1]) + math.abs(self.position[2] - task.destination[2]) < self.data.speed * 0.0167 * game.timeScale then
                 self.programPointer = self.programPointer + 1
                 self.position[1], self.position[2] = task.destination[1], task.destination[2]
                 return
@@ -96,7 +139,36 @@ local function wrapper(T)
             -- Attempted target position is ax, ay
             local ax, ay = self.position[1] + dx, self.position[2] + dy
             -- Check if ax, ay is blocked by operators
-
+            local t = game.team
+            local floor = math.floor
+            for i = 1, #t do
+                if t[i]['state'] == "battle" then
+                    if floor(t[i]['position'][1]) == round(ax) and floor(t[i]['position'][2]) == round(ay) then
+                        -- Do not move
+                        for j = 1, #t[i].blocked do
+                            if t[i].blocked[j] == self then
+                                return
+                            end
+                        end
+                        t[i].blocked[#t[i].blocked + 1] = self
+                        self.blocked = t[i]
+                        return
+                    end
+                end
+            end
+            -- Update distance to destination
+            local d = 0
+            for i = self.programPointer + 2, #self.program do
+                if self.program[i]['type'] == "move" then
+                    d = d + self.program[i]['length']
+                end
+            end
+            if path and #path > 1 then
+                d = d + #path - 2 + absLen
+            else
+                d = d + absLen
+            end
+            self.distance = d
             -- Update the position
             self.position[1], self.position[2] = ax, ay
         elseif task.type == "wait" then
