@@ -1,4 +1,10 @@
-**WARNING: THIS PROJECT IS HEAVILY UNDER DEVELOPMENT AND MAY BE DISCONTINUED AT ANY TIME!**
+# WARNING: THE PROJECT IS DISCONTINUED AND IS CURRENTLY BEING REVAMPED
+
+The main reason for this is that I have gained more knowledge about Spine, and will use Spine in the next project. Meanwhile, official level schema has been discovered, and the new Arknights Clone will be supporting this format (and only this format). In addition, the new program will be targeting PC instead of mobile devices.
+
+**The below documentation has been outdated.**
+
+---
 
 # Arknights Clone
 
